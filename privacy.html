@@ -1,0 +1,37 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Privacy | AdvisorScout</title>
+  <meta name="description" content="What AdvisorScout sends where. There is no backend and no account.">
+  <link rel="icon" type="image/svg+xml" href="assets/favicon.svg">
+  <meta name="theme-color" content="#2f5d50">
+  <link rel="stylesheet" href="src/styles.css">
+  <style>.legal { max-width: 720px; padding-bottom: 40px; } .legal h2 { margin-top: 28px; } .legal li { margin: 6px 0; }</style>
+</head>
+<body>
+  <header class="top">
+    <div class="wrap bar">
+      <a class="logo" href="./" style="text-decoration:none;color:inherit"><strong>AdvisorScout</strong></a>
+      <nav class="nav"><a href="./">Find advisors</a></nav>
+    </div>
+  </header>
+  <main class="wrap legal">
+    <h1>Privacy</h1>
+    <p class="lead">There is no AdvisorScout account and no AdvisorScout database of users.</p>
+    <ul>
+      <li><strong>Your search topic and filters</strong> go from your browser to OpenAlex, or to our small caching proxy in front of OpenAlex (Cloudflare), which keeps responses for 24 hours and counts requests per IP address for one day to prevent abuse. Responses are also cached in your browser for up to 7 days.</li>
+      <li><strong>Your license key</strong> and a fixed label ("AdvisorScout web") go to the payment provider (Lemon Squeezy or Gumroad) to check the key. Your purchase details are handled by that provider under its own privacy policy.</li>
+      <li><strong>Your tracker, shortlist, license and optional OpenAlex key</strong> stay in this browser (localStorage). We never receive them.</li>
+      <li><strong>Usage statistics</strong> are cookieless and anonymous (Umami): page views and events such as "search" or "opened Pro", never your search text. Browsers that send Global Privacy Control are not counted.</li>
+      <li><strong>Email list</strong> (optional): if you sign up, your email goes to our mailing provider (Kit). Unsubscribe from any email.</li>
+    </ul>
+    <h2>Researchers</h2>
+    <p>Profiles come from OpenAlex public data. If your entry is wrong, email us and fix it at the source on <a href="https://openalex.org" target="_blank" rel="noopener">openalex.org</a>; we will update or remove it here.</p>
+    <p class="muted">Seller: <span data-seller>AdvisorScout</span> · Contact: <span data-support>see the email on your receipt</span> · Last updated 30 October 2026.</p>
+    <p class="muted"><a href="terms.html">Terms</a> · <a href="privacy.html">Privacy</a> · <a href="refund.html">Refunds</a></p>
+  </main>
+  <script type="module" src="src/legal.js"></script>
+</body>
+</html>

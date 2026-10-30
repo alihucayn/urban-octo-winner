@@ -3,22 +3,42 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>AdvisorScout — find PhD advisors who are actively publishing in your area</title>
-  <meta name="description" content="Type your research interest. Get a ranked list of professors who publish on it right now, lead their own labs, and have recent papers you can cite in your cold email.">
+  <title>Find PhD Advisors &amp; Supervisors by Topic | AdvisorScout</title>
+  <meta name="description" content="Free: see which professors are publishing on your research topic right now. Shortlist a PhD supervisor and cite their latest paper in your cold email.">
+  <!-- Social cards are read without JS, so these URLs are absolute and static.
+       Change SITE_URL here (og:url, og:image, canonical) when you buy the domain: docs/LAUNCH.md section 3. -->
+  <link rel="canonical" href="https://alihucayn.github.io/urban-octo-winner/">
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="AdvisorScout">
+  <meta property="og:title" content="Find PhD advisors who are publishing on your topic right now">
+  <meta property="og:description" content="Type a research topic, get professors ranked by recent on-topic papers and lab-head signals. Free top 5, no sign-up.">
+  <meta property="og:url" content="https://alihucayn.github.io/urban-octo-winner/">
+  <meta property="og:image" content="https://alihucayn.github.io/urban-octo-winner/assets/og.png">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta property="og:image:alt" content="AdvisorScout: professors ranked by recent papers on your PhD topic">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="Find PhD advisors who are publishing on your topic right now">
+  <meta name="twitter:description" content="Professors ranked by recent on-topic papers and lab-head signals. Free top 5, no sign-up.">
+  <meta name="twitter:image" content="https://alihucayn.github.io/urban-octo-winner/assets/og.png">
+  <link rel="icon" type="image/svg+xml" href="assets/favicon.svg">
+  <link rel="apple-touch-icon" href="assets/apple-touch-icon.png">
+  <meta name="theme-color" content="#2f5d50">
   <link rel="stylesheet" href="src/styles.css">
 </head>
 <body>
   <header class="top">
     <div class="wrap bar">
       <strong class="logo">AdvisorScout</strong>
-      <button id="pro-state" class="pill">Unlock Pro</button>
+      <nav class="nav"><a href="#pricing">Pricing</a> <a href="guide.html">Cold-email guide</a> <button id="pro-state" class="pill">Unlock Pro</button></nav>
     </div>
   </header>
 
   <main class="wrap">
     <section class="hero">
-      <h1>Find PhD advisors who are publishing on your topic <em>right now</em>.</h1>
-      <p class="lead">Stop scrolling faculty pages. Type your research interest and get professors ranked by recent on-topic papers, how often they are the senior (last) author, and how many students lead papers in their lab, from 250M+ scholarly records in <a href="https://openalex.org" target="_blank" rel="noopener">OpenAlex</a>.</p>
+      <h1>Find PhD advisors (supervisors) who are publishing on your topic <em>right now</em>.</h1>
+      <p class="lead">Type your research interest. See who published on it in the last 3 years, who likely runs a lab, and a recent paper to cite in your first line.</p>
+      <p class="muted">Free · no sign-up · ranks by recent papers in any field indexed by OpenAlex</p>
     </section>
 
     <form id="search-form" class="search">
@@ -54,39 +74,64 @@
           <option value="AE">UAE</option>
         </select>
       </label>
-      <label>Active in last
-        <select name="years">
-          <option value="2">2 years</option>
-          <option value="3" selected>3 years</option>
-          <option value="5">5 years</option>
-        </select>
-      </label>
-      <label>Min h-index
-        <select name="minH">
-          <option value="5">5</option>
-          <option value="8" selected>8</option>
-          <option value="15">15</option>
-          <option value="25">25</option>
-        </select>
-      </label>
+      <details class="more-filters">
+        <summary>More filters</summary>
+        <div class="row">
+          <label title="Only papers from this many recent years count">Active in last
+            <select name="years">
+              <option value="2">2 years</option>
+              <option value="3" selected>3 years</option>
+              <option value="5">5 years</option>
+            </select>
+          </label>
+          <label title="h-index: h papers with at least h citations each. Higher = more established; lower finds newer faculty.">Min h-index
+            <select name="minH">
+              <option value="5">5</option>
+              <option value="8" selected>8</option>
+              <option value="15">15</option>
+              <option value="25">25</option>
+            </select>
+          </label>
+        </div>
+      </details>
       <button type="submit" class="primary">Find advisors</button>
     </form>
+    <div class="chips" id="chips" aria-label="Example topics">
+      <span class="muted">Try:</span>
+      <button type="button" class="chip">LLM safety</button>
+      <button type="button" class="chip">robot learning</button>
+      <button type="button" class="chip">computational biology</button>
+      <button type="button" class="chip">antimicrobial resistance</button>
+      <button type="button" class="chip">climate machine learning</button>
+      <button type="button" class="chip">maternal health</button>
+    </div>
     <p id="status" class="muted" role="status"></p>
     <section id="results" class="results"></section>
+    <div id="share" class="row share" hidden>
+      <button type="button" data-share="copy">Copy link to these results</button>
+      <a class="btn" data-share="whatsapp" target="_blank" rel="noopener">Share on WhatsApp</a>
+      <button type="button" data-share="native" hidden>Share…</button>
+    </div>
+    <section id="sample" class="results" hidden></section>
 
-    <section class="panel">
-      <h2>Outreach tracker <span class="count" id="tracker-count">0</span></h2>
-      <p class="muted">Saved on this device. Follow-up dates are set 10 days after you email.</p>
-      <div id="tracker"></div>
+    <section id="capture" class="panel capture" hidden>
+      <h2>Free PhD cold-email checklist + deadline reminders</h2>
+      <p class="muted">One email with the checklist, then short reminders before the Dec 1 and Dec 15 deadlines. Unsubscribe any time.</p>
+      <form id="capture-form" class="row">
+        <input type="email" name="email_address" required placeholder="you@example.com" aria-label="Email address" autocomplete="email">
+        <button type="submit" class="primary">Send me the checklist</button>
+      </form>
+      <p id="capture-state" class="muted" role="status"></p>
+      <p class="muted small">Your email goes to our mailing provider (Kit) only. Or <a href="guide.html">read the checklist now</a>, no email needed.</p>
     </section>
 
-    <section class="pricing">
+    <section class="pricing" id="pricing">
       <div class="tier">
         <h3>Free</h3>
         <ul>
-          <li>Unlimited searches</li>
+          <li>Free searches, no sign-up (within OpenAlex's daily data allowance)</li>
           <li>Top 5 matches per search</li>
-          <li>Track up to 3 professors</li>
+          <li>Track up to 3 professors, with backup and restore</li>
         </ul>
       </div>
       <div class="tier pro">
@@ -94,39 +139,77 @@
         <p class="muted" data-price-note></p>
         <ul>
           <li>Every match (up to 40 per search)</li>
-          <li>Cold-email draft built around each professor's latest paper</li>
+          <li>Cold-email starter built from their latest first/last-author paper</li>
           <li>CSV export of results and tracker</li>
-          <li>Unlimited outreach tracker with follow-up reminders</li>
+          <li>Unlimited tracker that flags who is due a follow-up</li>
         </ul>
-        <button class="primary" onclick="document.getElementById('pro-dialog').showModal()">Get Pro</button>
+        <p class="muted small">Less than one application fee ($75–140). Paid SOP reviews often cost $50–300.</p>
+        <p class="muted small" data-trust></p>
+        <button class="primary" id="pricing-pro" type="button">Get Pro</button>
+        <p id="pro-manage" class="muted" hidden>Pro is active on this device. <button type="button" id="deactivate">Deactivate on this device</button></p>
       </div>
+      <p class="founder muted" id="founder" hidden></p>
+      <div class="testimonials" id="testimonials" hidden></div>
+    </section>
+
+    <section class="panel">
+      <h2>Outreach tracker <span class="count" id="tracker-count">0</span></h2>
+      <p class="muted">Saved in this browser only, so download a backup now and then. Follow-up dates are set <span data-follow-up>10</span> days after you email.</p>
+      <div id="tracker"></div>
     </section>
 
     <section class="faq">
       <h2>How the ranking works</h2>
-      <p><strong>On-topic papers</strong>: papers matching your topic in the chosen window. <strong>Senior-author share</strong>: how often they are the last author, the usual position for a lab head. <strong>Lead students</strong>: distinct first authors on their senior-author papers, a proxy for lab size. Badges flag likely PIs, rising PIs (often keen to recruit) and profiles that look like students or postdocs.</p>
-      <p class="muted">Data from OpenAlex can be incomplete or out of date. Always confirm on the professor's own page before emailing.</p>
+      <p><strong>On-topic papers</strong>: papers matching your topic in the chosen window. <strong>Senior-author share</strong>: how often they are the last author, the usual position for a lab head. <strong>First authors (lab size)</strong>: distinct first authors on their senior-author papers, a rough guide to lab size. Badges flag likely PIs, rising PIs (often keen to recruit) and profiles that look like students or postdocs.</p>
+      <p class="muted">Data comes from <a href="https://openalex.org" target="_blank" rel="noopener">OpenAlex</a> (250M+ scholarly records) and can be incomplete or out of date. Always confirm on the professor's own page before emailing.</p>
+      <p class="muted">In fields that list authors alphabetically (much of mathematics, theoretical CS and economics), senior-author share and lab size say little; rely on paper count and recency there.</p>
+      <details>
+        <summary>Searching a lot? Use your own free OpenAlex key</summary>
+        <p class="muted">OpenAlex gives every free account a daily data allowance. Get a key at <a href="https://openalex.org" target="_blank" rel="noopener">openalex.org</a> and paste it here; it stays in this browser and is only sent to OpenAlex.</p>
+        <form id="oa-key-form" class="row">
+          <input id="oa-key" autocomplete="off" placeholder="OpenAlex API key" aria-label="OpenAlex API key">
+          <button type="submit">Save key</button>
+        </form>
+        <p id="oa-key-state" class="muted" role="status"></p>
+      </details>
     </section>
   </main>
 
-  <footer class="wrap muted">Built on <a href="https://openalex.org" target="_blank" rel="noopener">OpenAlex</a> open data (CC0). Not affiliated with any university.</footer>
+  <footer class="wrap muted">
+    <p>Searches go straight from your browser to <a href="https://openalex.org" target="_blank" rel="noopener">OpenAlex</a> open data (CC0); your tracker stays on this device. Cookieless, anonymous usage stats; no personal data or license keys collected. Not affiliated with any university.</p>
+    <p><span data-refund></span> <a href="guide.html">Free PhD cold-email checklist</a><span data-contact></span></p>
+    <p>© <span data-seller>AdvisorScout</span> · <a href="terms.html">Terms</a> · <a href="privacy.html">Privacy</a> · <a href="refund.html">Refunds</a></p>
+  </footer>
 
   <dialog id="pro-dialog">
-    <h2>Unlock AdvisorScout Pro</h2>
-    <p><span data-price></span> <span data-price-note></span>. You'll get a license key by email right after checkout.</p>
+    <h2 id="pro-title">Unlock AdvisorScout Pro</h2>
+    <p id="pro-reason" class="muted" hidden></p>
+    <ul class="pro-features">
+      <li>Every match (up to 40 per search)</li>
+      <li>Cold-email starter built from their latest first/last-author paper</li>
+      <li>CSV export of results and tracker</li>
+      <li>Unlimited tracker that flags who is due a follow-up</li>
+    </ul>
+    <p><strong data-price></strong> <span data-price-note></span></p>
+    <p id="code-banner" class="badge-line" hidden></p>
     <a id="buy-link" class="primary btn" target="_blank" rel="noopener">Buy now</a>
+    <p class="muted small" data-trust></p>
+    <p id="local-pay" class="muted small" hidden></p>
+    <p class="muted small"><a href="refund.html" target="_blank">Refund policy</a> · <a href="terms.html" target="_blank">Terms</a> · <a href="privacy.html" target="_blank">Privacy</a></p>
     <form id="license-form">
       <label>Already bought? Paste your license key
         <input name="key" autocomplete="off" placeholder="XXXX-XXXX-XXXX-XXXX">
       </label>
       <p id="pro-error" class="error"></p>
+      <p id="pro-help" class="muted small" hidden></p>
       <div class="row"><button type="button" data-close>Close</button><button type="submit" class="primary">Activate</button></div>
     </form>
   </dialog>
 
   <dialog id="email-dialog">
-    <h2>Email draft</h2>
+    <h2>Cold-email starter</h2>
     <p class="muted">Fill in the [brackets]. Professors ignore generic emails; the specific sentence about their paper is what gets replies.</p>
+    <p id="email-sample" class="muted small" hidden>Free sample for your top match. Drafts for every match: Pro, <span data-price></span> once. <button type="button" id="email-upgrade">Unlock</button></p>
     <textarea id="email-text" rows="16"></textarea>
     <div class="row"><button type="button" data-close>Close</button><button type="button" id="copy-email" class="primary">Copy</button></div>
   </dialog>

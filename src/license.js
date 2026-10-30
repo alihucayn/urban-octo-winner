@@ -1,13 +1,18 @@
 // License-key unlock. Keys are checked against the payment provider's public
 // license API from the browser and the result is cached for a week.
+// This is an honor-system gate: anyone with devtools can bypass it. It only
+// has to be fair to honest buyers: never revoke on a flaky network.
 import { CONFIG } from './config.js';
 
 const KEY = 'as.license';
 const WEEK = 7 * 24 * 60 * 60 * 1000;
+const LEMON = 'https://api.lemonsqueezy.com/v1/licenses/';
 
+// Light shape check only: stops a casual `{checkedAt: 9e15}` edit, not a determined user.
 function load() {
   try {
-    return JSON.parse(localStorage.getItem(KEY) || 'null');
+    const v = JSON.parse(localStorage.getItem(KEY) || 'null');
+    return v && typeof v.key === 'string' && v.key && Number(v.checkedAt) <= Date.now() ? v : null;
   } catch {
     return null;
   }
@@ -22,80 +27,137 @@ function save(v) {
   }
 }
 
+// Network errors (TypeError, CORS) propagate; a non-JSON body gives data null.
 async function postForm(url, body) {
   const res = await fetch(url, {
     method: 'POST',
     headers: { Accept: 'application/json', 'Content-Type': 'application/x-www-form-urlencoded' },
     body: new URLSearchParams(body),
   });
-  return res.json();
+  let data = null;
+  try {
+    data = await res.json();
+  } catch {
+    /* not JSON */
+  }
+  return { status: res.status, data };
 }
 
-function lemonOk(data) {
-  if (!data) return false;
-  const ok = data.valid === true || data.activated === true;
-  const status = data.license_key?.status;
-  if (!ok || status === 'disabled' || status === 'expired') return false;
-  if (CONFIG.lemonStoreId && data.meta?.store_id !== CONFIG.lemonStoreId) return false;
-  if (CONFIG.lemonProductId && data.meta?.product_id !== CONFIG.lemonProductId) return false;
-  return true;
+const definitive = (status) => status === 200 || status === 400 || status === 404 || status === 422;
+const isLocal = () => ['localhost', '127.0.0.1'].includes(globalThis.location?.hostname);
+
+// Outcome of one license call: 'ok' | 'invalid' (revoke/reject) | 'transient' (keep, retry later).
+export function classifyLemon({ status, data }) {
+  if (!CONFIG.lemonStoreId || !CONFIG.lemonProductId) return { result: 'invalid', kind: 'config', error: 'License check is not configured yet. Please email support.' };
+  if (!data || !definitive(status)) return { result: 'transient' };
+  const meta = data.meta || {};
+  if (meta.store_id !== undefined && Number(meta.store_id) !== Number(CONFIG.lemonStoreId)) return { result: 'invalid', kind: 'wrong_product' };
+  if (meta.product_id !== undefined && Number(meta.product_id) !== Number(CONFIG.lemonProductId)) return { result: 'invalid', kind: 'wrong_product' };
+  const st = data.license_key?.status;
+  if (st === 'disabled' || st === 'expired') return { result: 'invalid', kind: st };
+  if ((data.valid === true || data.activated === true) && status === 200 && meta.store_id !== undefined) return { result: 'ok' };
+  if (/activation limit/i.test(data.error || '')) {
+    const n = data.license_key?.activation_limit;
+    return {
+      result: 'invalid',
+      kind: 'limit',
+      error: `This key is active on ${n || 'the maximum number of'} devices. Deactivate it on one${CONFIG.supportEmail ? `, or email ${CONFIG.supportEmail} and I'll reset it` : ''}.`,
+    };
+  }
+  if (data.valid === false || data.activated === false || status !== 200) return { result: 'invalid', kind: 'rejected' };
+  return { result: 'transient' };
+}
+
+// `activating`: this call incremented the uses count, so enforce the device cap.
+export function classifyGumroad({ status, data }, activating = false) {
+  if (!CONFIG.gumroadProductId) return { result: 'invalid', kind: 'config', error: 'License check is not configured yet. Please email support.' };
+  if (!data || !(status === 200 || status === 400 || status === 404)) return { result: 'transient' };
+  const p = data.purchase || {};
+  const cap = CONFIG.activationLimit || 5;
+  if (data.success === true && activating && Number(data.uses) > cap) {
+    return {
+      result: 'invalid',
+      kind: 'limit',
+      error: `This key has been activated more than ${cap} times${CONFIG.supportEmail ? `. Email ${CONFIG.supportEmail} and I'll reset it` : ''}.`,
+    };
+  }
+  if (data.success === true && !(p.refunded || p.chargebacked || p.disputed)) return { result: 'ok' };
+  if (data.success === true) return { result: 'invalid', kind: 'refunded' };
+  if (data.success === false && status !== 200) return { result: 'invalid', kind: 'rejected' };
+  return { result: 'transient' };
 }
 
 async function check(key, instanceId) {
   const p = CONFIG.licenseProvider;
-  if (p === 'none') return { ok: true };
+  if (p === 'none') {
+    return isLocal() ? { result: 'ok' } : { result: 'invalid', kind: 'config', error: "licenseProvider 'none' only works on localhost." };
+  }
   if (p === 'gumroad') {
-    const d = await postForm('https://api.gumroad.com/v2/licenses/verify', {
+    const r = await postForm('https://api.gumroad.com/v2/licenses/verify', {
       product_id: CONFIG.gumroadProductId,
       license_key: key,
       increment_uses_count: instanceId ? 'false' : 'true',
     });
-    const bad = !d.success || d.purchase?.refunded || d.purchase?.chargebacked || d.purchase?.disputed;
-    return { ok: !bad, instanceId: 'gumroad' };
+    return { ...classifyGumroad(r, !instanceId), instanceId: 'gumroad' };
   }
-  const base = 'https://api.lemonsqueezy.com/v1/licenses/';
   if (instanceId) {
-    const d = await postForm(base + 'validate', { license_key: key, instance_id: instanceId });
-    return { ok: lemonOk(d), instanceId };
+    const r = await postForm(LEMON + 'validate', { license_key: key, instance_id: instanceId });
+    return { ...classifyLemon(r), instanceId };
   }
-  const d = await postForm(base + 'activate', { license_key: key, instance_name: navigator.userAgent.slice(0, 60) });
-  return { ok: lemonOk(d), instanceId: d.instance?.id, error: d.error };
+  const r = await postForm(LEMON + 'activate', { license_key: key, instance_name: 'AdvisorScout web' });
+  return { ...classifyLemon(r), instanceId: r.data?.instance?.id };
 }
 
+// Returns { ok, error?, kind? }; kind is a short enum safe to send to analytics.
 export async function activate(key) {
   key = key.trim();
-  if (!key) return { ok: false, error: 'Paste your license key.' };
+  if (!key) return { ok: false, kind: 'empty', error: 'Paste your license key.' };
+  let r;
   try {
-    const r = await check(key);
-    if (!r.ok) return { ok: false, error: r.error || 'That key was not accepted.' };
-    save({ key, instanceId: r.instanceId, checkedAt: Date.now() });
-    return { ok: true };
+    r = await check(key);
   } catch {
-    return { ok: false, error: 'Could not reach the license server. Try again.' };
+    r = { result: 'transient' };
   }
+  if (r.result === 'transient') return { ok: false, kind: 'network', error: 'Could not reach the license server. Try again in a minute.' };
+  if (r.result !== 'ok') return { ok: false, kind: r.kind, error: r.error || 'That key was not accepted.' };
+  save({ key, instanceId: r.instanceId, checkedAt: Date.now() });
+  return { ok: true };
 }
 
 export function isPro() {
   return !!load();
 }
 
-// Re-checks once a week; a network failure keeps the unlock (offline grace).
+// Re-checks once a week. Only a definitive answer revokes; network errors,
+// 429 and 5xx keep the unlock and leave checkedAt alone so the next load retries.
 export async function refresh() {
   const lic = load();
   if (!lic || Date.now() - lic.checkedAt < WEEK) return !!lic;
   try {
     const r = await check(lic.key, lic.instanceId);
-    if (!r.ok) {
+    if (r.result === 'invalid') {
       save(null);
       return false;
     }
-    save({ ...lic, checkedAt: Date.now() });
+    if (r.result === 'ok') save({ ...lic, checkedAt: Date.now() });
   } catch {
     /* keep */
   }
   return true;
 }
 
-export function deactivate() {
+// Frees this device's activation slot (Lemon Squeezy), then forgets the key.
+export async function deactivate() {
+  const lic = load();
+  let freed = false;
+  if (lic && CONFIG.licenseProvider === 'lemonsqueezy' && lic.instanceId) {
+    try {
+      const r = await postForm(LEMON + 'deactivate', { license_key: lic.key, instance_id: lic.instanceId });
+      freed = r.status === 200 && r.data?.deactivated === true;
+    } catch {
+      /* offline: still forget locally */
+    }
+  }
   save(null);
+  return { freed };
 }
