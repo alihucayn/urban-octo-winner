@@ -1,0 +1,12 @@
+{
+  "name": "advisorscout",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Find PhD advisors who are actively publishing in your research area (OpenAlex-powered).",
+  "scripts": {
+    "test": "node --test test/*.test.js",
+    "start": "python3 -m http.server 8080"
+  },
+  "license": "UNLICENSED"
+}

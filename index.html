@@ -1,0 +1,136 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>AdvisorScout — find PhD advisors who are actively publishing in your area</title>
+  <meta name="description" content="Type your research interest. Get a ranked list of professors who publish on it right now, lead their own labs, and have recent papers you can cite in your cold email.">
+  <link rel="stylesheet" href="src/styles.css">
+</head>
+<body>
+  <header class="top">
+    <div class="wrap bar">
+      <strong class="logo">AdvisorScout</strong>
+      <button id="pro-state" class="pill">Unlock Pro</button>
+    </div>
+  </header>
+
+  <main class="wrap">
+    <section class="hero">
+      <h1>Find PhD advisors who are publishing on your topic <em>right now</em>.</h1>
+      <p class="lead">Stop scrolling faculty pages. Type your research interest and get professors ranked by recent on-topic papers, how often they are the senior (last) author, and how many students lead papers in their lab, from 250M+ scholarly records in <a href="https://openalex.org" target="_blank" rel="noopener">OpenAlex</a>.</p>
+    </section>
+
+    <form id="search-form" class="search">
+      <label class="grow">Research topic
+        <input name="query" required placeholder="e.g. graph neural networks for drug discovery">
+      </label>
+      <label>Country
+        <select name="country">
+          <option value="">Any</option>
+          <option value="US">United States</option>
+          <option value="CA">Canada</option>
+          <option value="GB">United Kingdom</option>
+          <option value="DE">Germany</option>
+          <option value="NL">Netherlands</option>
+          <option value="CH">Switzerland</option>
+          <option value="SE">Sweden</option>
+          <option value="FR">France</option>
+          <option value="AU">Australia</option>
+          <option value="SG">Singapore</option>
+          <option value="HK">Hong Kong</option>
+          <option value="KR">South Korea</option>
+          <option value="JP">Japan</option>
+          <option value="CN">China</option>
+          <option value="IT">Italy</option>
+          <option value="ES">Spain</option>
+          <option value="BE">Belgium</option>
+          <option value="DK">Denmark</option>
+          <option value="FI">Finland</option>
+          <option value="NO">Norway</option>
+          <option value="AT">Austria</option>
+          <option value="IE">Ireland</option>
+          <option value="SA">Saudi Arabia</option>
+          <option value="AE">UAE</option>
+        </select>
+      </label>
+      <label>Active in last
+        <select name="years">
+          <option value="2">2 years</option>
+          <option value="3" selected>3 years</option>
+          <option value="5">5 years</option>
+        </select>
+      </label>
+      <label>Min h-index
+        <select name="minH">
+          <option value="5">5</option>
+          <option value="8" selected>8</option>
+          <option value="15">15</option>
+          <option value="25">25</option>
+        </select>
+      </label>
+      <button type="submit" class="primary">Find advisors</button>
+    </form>
+    <p id="status" class="muted" role="status"></p>
+    <section id="results" class="results"></section>
+
+    <section class="panel">
+      <h2>Outreach tracker <span class="count" id="tracker-count">0</span></h2>
+      <p class="muted">Saved on this device. Follow-up dates are set 10 days after you email.</p>
+      <div id="tracker"></div>
+    </section>
+
+    <section class="pricing">
+      <div class="tier">
+        <h3>Free</h3>
+        <ul>
+          <li>Unlimited searches</li>
+          <li>Top 5 matches per search</li>
+          <li>Track up to 3 professors</li>
+        </ul>
+      </div>
+      <div class="tier pro">
+        <h3>Pro · <span data-price></span></h3>
+        <p class="muted" data-price-note></p>
+        <ul>
+          <li>Every match (up to 40 per search)</li>
+          <li>Cold-email draft built around each professor's latest paper</li>
+          <li>CSV export of results and tracker</li>
+          <li>Unlimited outreach tracker with follow-up reminders</li>
+        </ul>
+        <button class="primary" onclick="document.getElementById('pro-dialog').showModal()">Get Pro</button>
+      </div>
+    </section>
+
+    <section class="faq">
+      <h2>How the ranking works</h2>
+      <p><strong>On-topic papers</strong>: papers matching your topic in the chosen window. <strong>Senior-author share</strong>: how often they are the last author, the usual position for a lab head. <strong>Lead students</strong>: distinct first authors on their senior-author papers, a proxy for lab size. Badges flag likely PIs, rising PIs (often keen to recruit) and profiles that look like students or postdocs.</p>
+      <p class="muted">Data from OpenAlex can be incomplete or out of date. Always confirm on the professor's own page before emailing.</p>
+    </section>
+  </main>
+
+  <footer class="wrap muted">Built on <a href="https://openalex.org" target="_blank" rel="noopener">OpenAlex</a> open data (CC0). Not affiliated with any university.</footer>
+
+  <dialog id="pro-dialog">
+    <h2>Unlock AdvisorScout Pro</h2>
+    <p><span data-price></span> <span data-price-note></span>. You'll get a license key by email right after checkout.</p>
+    <a id="buy-link" class="primary btn" target="_blank" rel="noopener">Buy now</a>
+    <form id="license-form">
+      <label>Already bought? Paste your license key
+        <input name="key" autocomplete="off" placeholder="XXXX-XXXX-XXXX-XXXX">
+      </label>
+      <p id="pro-error" class="error"></p>
+      <div class="row"><button type="button" data-close>Close</button><button type="submit" class="primary">Activate</button></div>
+    </form>
+  </dialog>
+
+  <dialog id="email-dialog">
+    <h2>Email draft</h2>
+    <p class="muted">Fill in the [brackets]. Professors ignore generic emails; the specific sentence about their paper is what gets replies.</p>
+    <textarea id="email-text" rows="16"></textarea>
+    <div class="row"><button type="button" data-close>Close</button><button type="button" id="copy-email" class="primary">Copy</button></div>
+  </dialog>
+
+  <script type="module" src="src/app.js"></script>
+</body>
+</html>
